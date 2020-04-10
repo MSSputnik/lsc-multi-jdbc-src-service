@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="DBRecords">
+
+	<select id="getGIDUniqueSrcListCSV" resultClass="java.util.HashMap">
+		SELECT DISTINCT "Global Identifier" as cpbglobalid
+		FROM gidsource
+	</select>
+	
+	<select id="getSrcGIDCSV" resultClass="java.util.HashMap" parameterClass="java.util.Map">
+		SELECT
+			"Global Identifier" as cpbglobalid,
+			"Supplier ID" as cpbsupplierid,
+			"Original Employee Number" as cpboriginalnumber,
+			"Local Employee id" as cpblocalemployeeid,
+			"Last Name" as lastname,
+			"2nd Last Name" as lastname_2,
+			"First Name" as firstname,
+			"Nick-Name" as nickname,
+			"Company Entry Date" as companyentrydate,
+			"Company Exit Date" as companyexitdate,
+			"Status of Employment" as cpbstatus_of_employee
+		FROM gidsource
+		WHERE cpbglobalid = #cpbglobalid#
+	</select>
+
+	<select id="getSrcGIDCleanCSV" resultClass="java.util.HashMap" parameterClass="java.util.Map">
+		SELECT DISTINCT "Global Identifier" as cpbglobalid
+		FROM gidsource
+		WHERE cpbglobalid = #cpbglobalid#
+	</select>
+
+	<select id="getGIDUniqueDstList" resultClass="java.util.HashMap">
+		SELECT cpbglobalid
+		FROM public.giddestination
+	</select>
+	
+	<select id="getDstGID" resultClass="java.util.HashMap" parameterClass="java.util.Map">
+		SELECT
+			cpbglobalid,
+			cpbsupplierid,
+			cpboriginalnumber,
+			cpblocalemployeeid,
+			lastname,
+			lastname_2,
+			firstname,
+			nickname,
+			companyentrydate,
+			companyexitdate,
+			cpbstatus_of_employee
+		FROM public.giddestination
+		WHERE cpbglobalid = #cpbglobalid#
+	</select>
+	
+	<insert id="insertGID" parameterClass="java.util.Map">
+		INSERT INTO public.giddestination
+			( cpbglobalid, cpbsupplierid, cpboriginalnumber, cpblocalemployeeid, lastname, lastname_2, firstname, nickname, 
+			  companyentrydate, companyexitdate, cpbstatus_of_employee)
+			VALUES ( #cpbglobalid#, #cpbsupplierid:VARCHAR#, #cpboriginalnumber:VARCHAR#, #cpblocalemployeeid:VARCHAR#, #lastname:VARCHAR#, 
+			  #lastname_2:VARCHAR#, #firstname:VARCHAR#, #nickname:VARCHAR#, #companyentrydate:VARCHAR#, #companyexitdate:VARCHAR#, 
+			  #cpbstatus_of_employee:VARCHAR#)
+	</insert>
+
+	<update id="updateGID" parameterClass="java.util.Map">
+		UPDATE public.giddestination
+			SET cpbsupplierid = #cpbsupplierid:VARCHAR#, cpboriginalnumber = #cpboriginalnumber:VARCHAR# , cpblocalemployeeid = #cpblocalemployeeid:VARCHAR#, 
+			  lastname = #lastname:VARCHAR#, lastname_2 = #lastname_2:VARCHAR#, firstname = #firstname:VARCHAR#, nickname = #nickname:VARCHAR#,
+			  companyentrydate = #companyentrydate:VARCHAR#, companyexitdate = #companyexitdate:VARCHAR#, cpbstatus_of_employee = #cpbstatus_of_employee:VARCHAR#
+			WHERE cpbglobalid = #cpbglobalid#
+	</update>
+
+	<delete id="deleteGID" parameterClass="java.util.Map">
+		DELETE 
+		  FROM public.giddestination
+		  WHERE cpbglobalid = #cpbglobalid#
+	</delete>
+</sqlMap>

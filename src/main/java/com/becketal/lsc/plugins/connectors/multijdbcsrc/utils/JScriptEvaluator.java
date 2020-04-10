@@ -1,0 +1,209 @@
+/*
+ ****************************************************************************
+a * Ldap Synchronization Connector provides tools to synchronize
+ * electronic identities from a list of data sources including
+ * any database with a JDBC connector, another LDAP directory,
+ * flat files...
+ *
+ *                  ==LICENSE NOTICE==
+ * 
+ * Copyright (c) 2008 - 2011 LSC Project 
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+
+ *    * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the LSC Project nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+ * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ * PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+ * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *                  ==LICENSE NOTICE==
+ *
+ *               (c) 2008 - 2011 LSC Project
+ *         Sebastien Bahloul <seb@lsc-project.org>
+ *         Thomas Chemineau <thomas@lsc-project.org>
+ *         Jonathan Clarke <jon@lsc-project.org>
+ *         Remy-Christophe Schermesser <rcs@lsc-project.org>
+ ****************************************************************************
+ */
+package com.becketal.lsc.plugins.connectors.multijdbcsrc.utils;
+
+import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+import javax.script.Bindings;
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
+
+import org.lsc.beans.IBean;
+import org.lsc.exception.LscServiceException;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.EvaluatorException;
+import org.mozilla.javascript.UniqueTag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * This is the Rhino Java Script evaluation context.
+ * copy of lsc.utils.JScriptEvaluator
+ * adapted to the needs for the MultiJdbcSrcService
+  * 
+ * @author Sebastien Bahloul &lt;seb@lsc-project.org&gt;
+ * @author Martin Schmidt
+ */
+public final class JScriptEvaluator implements ScriptableEvaluator {
+
+	// Logger
+	private static final Logger LOGGER = LoggerFactory.getLogger(JScriptEvaluator.class);
+
+	//	/** The precompiled Javascript cache. */
+	//	private Map<String, Script> cache;
+
+	private ScriptEngine engine;
+
+	/** The local Rhino context. */
+	//	private ScriptContext cx;
+
+	/**
+	 * Default public constructor.
+	 */
+	public JScriptEvaluator(ScriptEngine se) {
+		//		cache = new HashMap<String, Script>();
+		this.engine = se;
+		//		cx = se.getContext();//new ContextFactory().enterContext();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public Object evalToObject(final String expression, final Map<String, Object> params) throws LscServiceException {
+		try {
+			return convertJsToJava(instanceEval(expression, params));
+		} catch(EvaluatorException e) {
+			throw new LscServiceException(e);
+		}
+	}
+
+	/**
+	 * Local instance evaluation.
+	 *
+	 * @param expression
+	 *                the expression to eval
+	 * @param params
+	 *                the keys are the name used in the
+	 * @return the evaluation result
+	 * @throws LscServiceException 
+	 */
+	private Object instanceEval(final String expression,
+			final Map<String, Object> params) throws LscServiceException {
+		//		Script script = null;
+		Bindings bindings = engine.createBindings();
+
+
+		/* Allow to have shorter names for function in the package org.lsc.utils.directory */
+		String expressionImport =
+				"var version = java.lang.System.getProperty(\"java.version\");\n" +
+						"if (version.startsWith(\"1.8.0\")) { load(\"nashorn:mozilla_compat.js\"); }\n" +
+						"importPackage(org.lsc.utils.directory);\n" +
+						"importPackage(org.lsc.utils);\n" + expression;
+
+		//		if (cache.containsKey(expressionImport)) {
+		//			script = cache.get(expressionImport);
+		//		} else {
+		//			script = cx.compileString(expressionImport, "<cmd>", 1, null);
+		//			cache.put(expressionImport, script);
+		//		}
+
+		if(params != null) {
+			for(String paramName: params.keySet()) {
+				bindings.put(paramName, params.get(paramName));
+			}
+		}
+
+		Object ret = null;
+		try {
+			ret = engine.eval(expressionImport, bindings);
+		} catch (ScriptException e) {
+			LOGGER.error("Fail to compute expression: " + expression + " on " + 
+					(params.containsKey("srcBean") && ((IBean)params.get("srcBean")).getMainIdentifier() != null ? "id=" + ((IBean)params.get("srcBean")).getMainIdentifier() : 
+						( params.containsKey("dstBean") && ((IBean)params.get("dstBean")).getMainIdentifier() != null ? "id=" + ((IBean)params.get("dstBean")).getMainIdentifier() :
+								"unknown id !"))
+					+ "\nReason: " + e.toString());
+			LOGGER.debug(e.toString(), e);
+			throw new LscServiceException (e);
+		} catch (RuntimeException e) {
+			throw new LscServiceException (e);
+		} catch (Exception e) {
+			LOGGER.error(e.toString());
+			LOGGER.debug(e.toString(), e);
+			return null;
+		}
+
+		return ret;
+	}
+
+	private static Object convertJsToJava(Object src) {
+		if (src == null) {
+			return null;
+		} else if(src.getClass().getName().equals("sun.org.mozilla.javascript.internal.NativeJavaObject")) {
+			return Context.jsToJava(src, Object.class);
+		} else if (src.getClass().getName().equals("sun.org.mozilla.javascript.internal.NativeArray")) {
+			try {
+				Method getMethod = src.getClass().getMethod("get", int.class, Class.forName("sun.org.mozilla.javascript.internal.Scriptable"));
+				Object length = src.getClass().getMethod("getLength").invoke(src);
+				Object[] retarr = new Object[Integer.parseInt(length.toString())];
+				for (int index = 0; index < retarr.length; index++) {
+					retarr[index] = getMethod.invoke(src, index, null);
+				}
+				return retarr;
+			} catch(Exception e) {
+				LOGGER.error(e.toString());
+				LOGGER.debug(e.toString(), e);
+			}
+		} else if (src instanceof Bindings) {
+			try {
+				final Class<?> cls = Class.forName("jdk.nashorn.api.scripting.ScriptObjectMirror");
+				if (cls.isAssignableFrom(src.getClass())) {
+					final Method isArray = cls.getMethod("isArray");
+					final Object result = isArray.invoke(src);
+					if (result != null && result.equals(true)) {
+						final Method values = cls.getMethod("values");
+						final Object vals = values.invoke(src);
+						if (vals instanceof Collection<?>) {
+							final Collection<?> coll = (Collection<?>) vals;
+							return coll.toArray(new Object[0]);
+						}
+					}
+				}
+			} catch(Exception e) {
+				LOGGER.error(e.toString());
+				LOGGER.debug(e.toString(), e);
+			}
+		} else if (src instanceof List<?>) {
+			final List<?> list = (List<?>) src;
+			return list.toArray(new Object[0]);
+		} else if (src == UniqueTag.NOT_FOUND
+				|| src == UniqueTag.NULL_VALUE) {
+			return null;
+		}
+		return src;
+	}
+}

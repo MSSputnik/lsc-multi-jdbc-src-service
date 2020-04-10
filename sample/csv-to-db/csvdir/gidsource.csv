@@ -1,0 +1,7 @@
+Global Identifier,Supplier ID,Original Employee Number,Local Employee id,"Last Name","2nd Last Name","First Name","Nick-Name",Company Entry Date,Company Exit Date,Status of Employment
+12345,ABC,AAAA,AAAA,Schmidt,,Martin,mssputnik,20190101,99991231,3
+34221,ABC,BBBB,BBBB,Dummy,,Hans,,20190301,99991231,3
+34221,XXY,DVDS,DVDS,Dummy,Dummy2,Hannes,,20200301,99991231,3
+56872,ABC,RTD,RSERF,Mueller,,Joe,,20190201,20191231,3
+56872,XXY,GSER,GSER,Müller,,Joahim,,20200101,99991231,3
+56872,UUU,SSSS,SSS,Mueller,,Joe,,20990101,99991231,1

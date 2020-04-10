@@ -1,0 +1,1 @@
+"%JAVA_HOME%\bin\xjc.exe" -encoding utf-8 -p com.becketal.lsc.plugins.connectors.multijdbcsrc.generated -d src\main\java -extension -b lsc.episode src\main\resources\schemas\lsc-multi-jdbc-src-service-1.0.xsd

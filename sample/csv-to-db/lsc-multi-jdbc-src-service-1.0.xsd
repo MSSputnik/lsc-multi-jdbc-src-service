@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns="http://lsc-project.org/XSD/lsc-multi-jdbc-src-service-1.0.xsd" targetNamespace="http://lsc-project.org/XSD/lsc-multi-jdbc-src-service-1.0.xsd"
+	elementFormDefault="qualified" xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+	xmlns:lsc="http://lsc-project.org/XSD/lsc-core-2.1.xsd" jaxb:version="2.0">
+
+	<xsd:import namespace="http://lsc-project.org/XSD/lsc-core-2.1.xsd" schemaLocation="lsc-core-2.1.xsd" />
+
+	<xsd:element name="MultiJdbcSrcServiceConfig">
+		<xsd:complexType>
+			<xsd:sequence>
+					<xsd:element name="interval" type="xsd:int"
+						default="5" minOccurs="0" />
+					<xsd:element name="requestNameForList" type="xsd:string"
+						minOccurs="0" />
+					<xsd:element name="requestNameForObject" type="xsd:string"
+						minOccurs="0" />
+					<xsd:element name="requestNameForNextId" type="xsd:string"
+						minOccurs="0" />
+					<xsd:element name="requestNameForClean" type="xsd:string"
+						minOccurs="0" />
+				<xsd:element name="multivaluehook" type="xsd:string" />
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+
+</xsd:schema>
